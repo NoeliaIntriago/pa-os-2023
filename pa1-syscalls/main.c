@@ -1,13 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <errno.h>
 
 #define MAX 1024
 int main (int argc, char* argv[]) {
     char line[MAX];
-    int file;
 
     if (argc > 2) {
         printf("Use: mycat namefile.\n");
@@ -19,17 +16,20 @@ int main (int argc, char* argv[]) {
             printf("%s", line);
         }
     } else {
+        int file, output;
         char* filename = argv[1];
-        char* output = (char*) calloc(MAX, sizeof(char));
-        int fd = open(filename, O_RDONLY);
+        file = open(filename, O_RDONLY);
 
-        if (fd == -1) {
-            fprintf(stderr, "No such file or directory\n");
+        if (file == -1) {
+            printf("ERROR: No such file or directory\n");
             return 1;
         }
         
-        
+        while((output = read(file, line, MAX)) > 0){
+            write(1, line, output);
+        }
+
+        close(file);
     }
-    
     return 0;
 }
