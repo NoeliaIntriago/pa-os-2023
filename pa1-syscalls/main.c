@@ -5,6 +5,7 @@
 #define MAX 1024
 int main (int argc, char* argv[]) {
     char line[MAX];
+    int output;
 
     if (argc > 2) {
         printf("Use: mycat namefile.\n");
@@ -12,11 +13,11 @@ int main (int argc, char* argv[]) {
     }
 
     if (argc == 1) {
-        while (fgets(line, sizeof(line), stdin)) {
-            printf("%s", line);
+        while((output = read(STDIN_FILENO, line, MAX)) > 0){
+            write(STDOUT_FILENO, line, output);
         }
     } else {
-        int file, output;
+        int file;
         char* filename = argv[1];
         file = open(filename, O_RDONLY);
 
