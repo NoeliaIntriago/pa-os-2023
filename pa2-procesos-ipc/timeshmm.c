@@ -18,9 +18,9 @@ int main(int argc, char *argv[]){
 
     const char* name = "MAIN";  // Shared memory object name
     int shm_fd;                 // File descriptor for shared memory object
-    void *ptr;                  // Pointer to attach shared memory
-    struct timeval start_time;
+    struct timeval *start_time;
     pid_t pid;
+    int status;
 
     shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
     if (shm_fd < 0) {
@@ -29,13 +29,12 @@ int main(int argc, char *argv[]){
     }
 
     ftruncate(shm_fd, SIZE);
-    ptr = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if(ptr == MAP_FAILED){
+    start_time = (struct timeval *) mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if(start_time == MAP_FAILED){
         perror("mmap");
         return 1;
     }
 
-    gettimeofday(&start_time, NULL);
     pid = fork();
     if (pid < 0) {
         // Error while creating child
@@ -43,15 +42,36 @@ int main(int argc, char *argv[]){
         return 1;
     } else if (pid == 0) {
         // Child process
-        execvp(argv[0], argv);
+        gettimeofday(start_time, NULL);
+        execvp(argv[1], &argv[1]);
+        printf("ERROR: Failed to run execvp\n");
+        exit(status);
     } else {
         // Parent process
-        int status;
         waitpid(pid, &status, 0);
-
-        struct timeval end_time;
-        gettimeofday(&end_time, NULL);
-
-
+        if(WIFEXITED(status)) {
+            struct timeval end_time;
+            gettimeofday(&end_time, NULL);
+            
+            long elapsed_sec = end_time.tv_sec - start_time->tv_sec;
+            long elapsed_usec = end_time.tv_usec - start_time->tv_usec;
+            if (elapsed_usec < 0) {
+                elapsed_sec--;
+                elapsed_usec += 1000000;
+            }
+            printf("Elapsed time: %ld seconds\n", elapsed_sec);
+        } else {
+            printf("ERROR: Failed to terminate child\n");
+        }
+        if (munmap(start_time, SIZE) < 0){
+            printf("ERROR: Failed to release shared memory\n");
+            return 1;
+        }
+        if (shm_unlink(name)) {
+            printf("ERROR: Failed to delete shared memory\n");
+            return 1;
+        }
     }
+
+    return 0;
 }
