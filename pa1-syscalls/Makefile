@@ -1,9 +1,10 @@
-mycat: main.o
-	gcc -o mycat main.o
+all: build build/mycat
 
-main.o: main.c
-	gcc -c main.c
+build:
+	mkdir -p build
 
-.PHONY: clean
+build/mycat: main.c
+	gcc -g -Wall -o build/mycat main.c
+
 clean:
-	rm -rf mycat *.o
+	rm build/*
