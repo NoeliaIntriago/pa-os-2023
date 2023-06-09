@@ -38,13 +38,13 @@ int main(int argc, char *argv[]){
     pid = fork();
     if (pid < 0) {
         // Error while creating child
-        printf("ERROR: Failed to create child process\n");
+        perror("ERROR: Failed to create child process\n");
         return 1;
     } else if (pid == 0) {
         // Child process
         gettimeofday(start_time, NULL);
         execvp(argv[1], &argv[1]);
-        printf("ERROR: Failed to run execvp\n");
+        perror("ERROR: Failed to run execvp\n");
         exit(status);
     } else {
         // Parent process
@@ -55,20 +55,18 @@ int main(int argc, char *argv[]){
             
             long elapsed_sec = end_time.tv_sec - start_time->tv_sec;
             long elapsed_usec = end_time.tv_usec - start_time->tv_usec;
-            if (elapsed_usec < 0) {
-                elapsed_sec--;
-                elapsed_usec += 1000000;
-            }
-            printf("Elapsed time: %ld seconds\n", elapsed_sec);
+            double elapsed_time = elapsed_sec + elapsed_usec / 1000000.0;
+            printf("Elapsed time: %.6f seconds\n", elapsed_time);
         } else {
-            printf("ERROR: Failed to terminate child\n");
+            perror("ERROR: Failed to terminate child\n");
+            return 1;
         }
         if (munmap(start_time, SIZE) < 0){
-            printf("ERROR: Failed to release shared memory\n");
+            perror("ERROR: Failed to release shared memory\n");
             return 1;
         }
         if (shm_unlink(name)) {
-            printf("ERROR: Failed to delete shared memory\n");
+            perror("ERROR: Failed to delete shared memory\n");
             return 1;
         }
     }
