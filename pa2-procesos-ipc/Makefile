@@ -1,16 +1,13 @@
-all: init timeshmm timepipe
+all: build timeshmm timepipe
 
-init: 
+build:
 	mkdir -p build
 
-# build/time: 
-# 	build/timeshmm & build/timepipe
-
-timeshmm: 
+timeshmm:
 	gcc -g -Wall -o build/timeshmm timeshmm.c -lrt
 
 timepipe:
 	gcc -g -Wall -o build/timepipe timepipe.c -lrt
-     
+
 clean:
 	rm build/*
