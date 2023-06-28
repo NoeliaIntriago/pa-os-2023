@@ -77,6 +77,6 @@ Luego de verificar la region a validar, debera establecer si el hilo ha pasado l
 
 5. Use `pthread_join()` para esperar a que finalicen todos los hilos lanzados
 
-Verifique cada entrada del arreglo `region_isvalid` y determine si el tablero es valido o no.
+6. Verifique cada entrada del arreglo `region_isvalid` y determine si el tablero es valido o no.
 
 **Nota:** Recuerde verificar que las funciones usadas incluyan los archivos de cabecera correctos usando el comando `man` o la ayuda en linea.
