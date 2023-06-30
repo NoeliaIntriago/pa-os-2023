@@ -32,37 +32,77 @@ void printError(int error){
 */
 BMP_Image* createBMPImage(FILE* fptr) {
 
+  if (fptr == NULL) {
+    printError(FILE_ERROR);
+    return NULL;
+  }
+
   //Allocate memory for BMP_Image*;
+  BMP_Image * new_image = malloc(sizeof(BMP_Image));
+  if (new_image == NULL) {
+    printError(MEMORY_ERROR);
+    return NULL;
+  }
 
   //Read the first 54 bytes of the source into the header
+  fread(&(new_image->header), sizeof(BMP_Header), 1, fptr);
 
-  //Compute data size, width, height, and bytes per pixel;
+  //Compute data size, width, height, and bytes per pixel
+  new_image->norm_height = abs(new_image->header.height_px);
+  new_image->bytes_per_pixel = new_image->header.bits_per_pixel / 8;
 
   //Allocate memory for image data
+  readImageData(fptr, new_image, new_image->norm_height * new_image->header.width_px);
+
+  return new_image;
 }
 
 /* The input arguments are the source file pointer, the image data pointer, and the size of image data.
  * The functions reads data from the source into the image data matriz of pixels.
 */
 void readImageData(FILE* srcFile, BMP_Image * image, int dataSize) {
+  image->pixels = malloc(image->norm_height * sizeof(Pixel *));
 
+  for(int i = 0; i < image->norm_height; i++) {
+    image->pixels[i] = malloc((image->header.width_px) * sizeof(Pixel));
+  }
 }
 
 /* The input arguments are the pointer of the binary file, and the image data pointer.
  * The functions open the source file and call to CreateBMPImage to load de data image.
 */
 void readImage(FILE *srcFile, BMP_Image * dataImage) {
+  dataImage = createBMPImage(srcFile);
 }
 
 /* The input arguments are the destination file name, and BMP_Image pointer.
  * The function write the header and image data into the destination file.
 */
 void writeImage(char* destFileName, BMP_Image* dataImage) {
+  FILE *fd = fopen(destFileName, "wb");
+  if (fd == NULL) {
+    printError(FILE_ERROR);
+    return;
+  }
+
+  fwrite(&(dataImage->header), sizeof(BMP_Header), 1, fd);
+
+  for (int y = 0; y < dataImage->norm_height; y++) {
+    fwrite(dataImage->pixels[y], sizeof(Pixel), dataImage->header.width_px, fd);
+  }
+
+  fclose(fd);
 }
 
 /* The input argument is the BMP_Image pointer. The function frees memory of the BMP_Image.
 */
 void freeImage(BMP_Image* image) {
+  for (int i = 0; i < image->norm_height; i++) {
+    free(image->pixels[i]);
+  }
+  free(image->pixels);
+
+  free(image);
 }
 
 /* The functions checks if the source image has a valid format.
