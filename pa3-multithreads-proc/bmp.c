@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "bmp.h"
 /* USE THIS FUNCTION TO PRINT ERROR MESSAGES
@@ -45,14 +46,20 @@ BMP_Image* createBMPImage(FILE* fptr) {
   }
 
   //Read the first 54 bytes of the source into the header
-  fread(&(new_image->header), sizeof(BMP_Header), 1, fptr);
+  fread(&(new_image->header), sizeof(HEADER_SIZE), 1, fptr);
 
   //Compute data size, width, height, and bytes per pixel
   new_image->norm_height = abs(new_image->header.height_px);
   new_image->bytes_per_pixel = new_image->header.bits_per_pixel / 8;
+  new_image->pixels = malloc((new_image->norm_height) * sizeof(Pixel *));
+
+  for (int i = 0; i < new_image->norm_height; i++) {
+    new_image->pixels[i] = malloc((new_image->header.width_px) * sizeof(Pixel));
+  }
 
   //Allocate memory for image data
-  readImageData(fptr, new_image, new_image->norm_height * new_image->header.width_px);
+  printf("Reading ImageData...\n");
+  readImageData(fptr, new_image, new_image->header.size);
 
   return new_image;
 }
@@ -61,10 +68,8 @@ BMP_Image* createBMPImage(FILE* fptr) {
  * The functions reads data from the source into the image data matriz of pixels.
 */
 void readImageData(FILE* srcFile, BMP_Image * image, int dataSize) {
-  image->pixels = malloc(image->norm_height * sizeof(Pixel *));
-
   for(int i = 0; i < image->norm_height; i++) {
-    image->pixels[i] = malloc((image->header.width_px) * sizeof(Pixel));
+    fread(image->pixels[i], sizeof(Pixel), image->header.width_px, srcFile);
   }
 }
 

@@ -21,6 +21,9 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   } 
 
+  printf("Reading Image1...\n");
+  printBMPHeader(&image->header);
+  printBMPImage(image);
   readImage(source, image);
 
   if(!checkBMPValid(&image->header)) {
