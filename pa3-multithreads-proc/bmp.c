@@ -96,6 +96,7 @@ void writeImage(char* destFileName, BMP_Image* dataImage) {
   }
 
   fclose(fd);
+  return;
 }
 
 /* The input argument is the BMP_Image pointer. The function frees memory of the BMP_Image.
