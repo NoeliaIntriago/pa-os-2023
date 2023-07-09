@@ -21,17 +21,14 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   } 
 
-  printf("Reading Image1...\n");
-  printBMPHeader(&image->header);
-  printBMPImage(image);
-  readImage(source, image);
+  image = readImage(source);
 
   if(!checkBMPValid(&image->header)) {
     printError(VALID_ERROR);
     exit(EXIT_FAILURE);
   }
 
-  readImage(source, image);
+  image = readImage(source);
   printBMPHeader(&image->header);
   printBMPImage(image);
 

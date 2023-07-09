@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "bmp.h"
 /* USE THIS FUNCTION TO PRINT ERROR MESSAGES
    DO NOT MODIFY THIS FUNCTION
 */
-void printError(int error){
+void printError(int error) {
   switch(error){
   case ARGUMENT_ERROR:
     printf("Usage:ex5 <source> <destination>\n");
@@ -76,8 +75,8 @@ void readImageData(FILE* srcFile, BMP_Image * image, int dataSize) {
 /* The input arguments are the pointer of the binary file, and the image data pointer.
  * The functions open the source file and call to CreateBMPImage to load de data image.
 */
-void readImage(FILE *srcFile, BMP_Image * dataImage) {
-  dataImage = createBMPImage(srcFile);
+BMP_Image* readImage(FILE *srcFile) {
+  return createBMPImage(srcFile);
 }
 
 /* The input arguments are the destination file name, and BMP_Image pointer.
