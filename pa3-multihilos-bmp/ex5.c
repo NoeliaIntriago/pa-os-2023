@@ -3,7 +3,7 @@
 #include "bmp.h"
 #include "filter.h"
 
-#define NUMTHREADS 5
+#define NUMTHREADS 2
 
 int main(int argc, char **argv)
 {
