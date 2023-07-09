@@ -22,12 +22,14 @@ int main(int argc, char **argv) {
   } 
 
   image = readImage(source);
-  if (image == NULL) {
+  if(!checkBMPValid(&image->header)) {
     printError(VALID_ERROR);
-    freeImage(image);
-    fclose(source);
     return EXIT_FAILURE;
   }
+
+  image = readImage(source);
+  printBMPHeader(&image->header);
+  printBMPImage(image);
 
   freeImage(image);
   fclose(source);

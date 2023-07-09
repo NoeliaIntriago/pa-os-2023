@@ -121,14 +121,17 @@ int checkBMPValid(BMP_Header* header) {
   }
   // Make sure we are getting 24 bits per pixel
   if (header->bits_per_pixel != 24) {
+    printf("We're not getting 24 bits per pixel\n");
     return FALSE;
   }
   // Make sure there is only one image plane
   if (header->planes != 1) {
+    printf("There isn't just one image\n");
     return FALSE;
   }
   // Make sure there is no compression
   if (header->compression != 0) {
+    printf("There is some compression\n");
     return FALSE;
   }
   return TRUE;
