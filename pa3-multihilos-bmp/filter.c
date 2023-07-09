@@ -77,6 +77,13 @@ void handlePadding(BMP_Image *imageIn)
     for (int i = 0; i < height_px; i++)
     {
         padding[i] = calloc(width_px, sizeof(Pixel));
+
+        for (int j = 0; j < width_px; j++) {
+            padding[i][j].red = 0;
+            padding[i][j].green = 0;
+            padding[i][j].blue = 0;
+            padding[i][j].alpha = 255;
+        }
     }
 
     for (int j = 0; j < imageIn->norm_height; j++)
@@ -137,7 +144,7 @@ void applyParallel(BMP_Image *imageIn, BMP_Image *imageOut, int numThreads)
 
     for (int i = 0; i < numThreads; i++)
     {
-        endRow = startRow + rowsPerThread - 1;
+        endRow = startRow + rowsPerThread;
         if (remainingRows > 0)
         {
             endRow++;
@@ -151,7 +158,7 @@ void applyParallel(BMP_Image *imageIn, BMP_Image *imageOut, int numThreads)
 
         pthread_create(&threads[i], NULL, filterThreadWorker, &params[i]);
 
-        startRow = endRow + 1;
+        startRow = endRow;
     }
 
     for (int i = 0; i < numThreads; i++)
