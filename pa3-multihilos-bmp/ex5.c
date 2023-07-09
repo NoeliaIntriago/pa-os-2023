@@ -3,15 +3,14 @@
 #include "bmp.h"
 #include "filter.h"
 
+#define NUMTHREADS 5
+
 int main(int argc, char **argv)
 {
   FILE *source;
   FILE *dest;
   BMP_Image *imageIn = NULL;
   BMP_Image *imageOut = NULL;
-  int boxFilter[FILTER_SIZE][FILTER_SIZE] = { {1,1,1}, 
-                                         {1,1,1}, 
-                                         {1,1,1} };
 
   /* Checks for 3 arguments in console */
   if (argc != 3)
@@ -69,7 +68,7 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  // applyParallel(imageIn, imageOut, boxFilter, 5);
+  applyParallel(imageIn, imageOut, NUMTHREADS);
   if (writeImage(dest, imageOut) != 0)
   {
     printError(MEMORY_ERROR);

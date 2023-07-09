@@ -8,243 +8,117 @@ typedef struct
 {
     BMP_Image *imageIn;
     BMP_Image *imageOut;
-    int threadIndex;
+    int index;
     int numThreads;
-    int boxFilter[FILTER_SIZE][FILTER_SIZE];
-} ThreadArgs;
+} parameters;
 
-int check(BMP_Image *image, int x, int y, char color)
-{
-    if (x < 0)
-    {
-        x++;
-    }
-    if (x >= image->header.width_px)
-    {
-        x--;
-    }
-    if (y < 0)
-    {
-        y++;
-    }
-    if (y >= image->norm_height)
-    {
-        y--;
-    }
-    if (color == 'b')
-    {
-        return image->pixels[y][x].blue;
-    }
-    else if (color == 'g')
-    {
-        return image->pixels[y][x].green;
-    }
-    else if (color == 'r')
-    {
-        return image->pixels[y][x].red;
-    }
-    else
-    {
-        return image->pixels[y][x].alpha;
-    }
-}
+int boxFilter[FILTER_SIZE][FILTER_SIZE] = {{1, 1, 1},
+                                           {1, 1, 1},
+                                           {1, 1, 1}};
 
-int getRedBlurred(BMP_Image *image, int x, int y, int filter[FILTER_SIZE][FILTER_SIZE])
+int getPixelValue(Pixel **pixels_in, int color, int x, int y)
 {
-    if (filter == NULL)
+    int value = 0;
+
+    for (int i = 0; i < FILTER_SIZE; i++)
     {
-        for (int i = 0; i < FILTER_SIZE; i++)
+        for (int j = 0; j < FILTER_SIZE; j++)
         {
-            for (int j = 0; j < FILTER_SIZE; j++)
+            int m = x - FILTER_SIZE / 2 + i;
+            int n = y - FILTER_SIZE / 2 + j;
+
+            int channel;
+
+            switch (color)
             {
-                filter[i][j] = 1;
+            case 'r':
+                channel = pixels_in[m][n].red;
+                break;
+            case 'g':
+                channel = pixels_in[m][n].green;
+                break;
+            case 'b':
+                channel = pixels_in[m][n].blue;
+                break;
+            default:
+                return 0;
             }
+
+            value += channel * boxFilter[i][j];
         }
     }
 
-    int blurredValue = image->pixels[x][y].red * filter[1][1];
-
-    blurredValue += check(image, x - 1, y - 1, "r") * filter[0][0];
-    blurredValue += check(image, x - 1, y, "r") * filter[0][1];
-    blurredValue += check(image, x - 1, y + 1, "r") * filter[0][2];
-
-    blurredValue += check(image, x, y - 1, "r") * filter[1][0];
-    blurredValue += check(image, x, y + 1, "r") * filter[1][2];
-
-    blurredValue += check(image, x + 1, y - 1, "r") * filter[2][0];
-    blurredValue += check(image, x + 1, y, "r") * filter[2][1];
-    blurredValue += check(image, x + 1, y + 1, "r") * filter[2][2];
-
-    return blurredValue / 9;
+    return value;
 }
 
-int getGreenBlurred(BMP_Image *image, int x, int y, int filter[FILTER_SIZE][FILTER_SIZE])
+void apply(BMP_Image *imageIn, BMP_Image *imageOut)
 {
-    if (filter == NULL)
+    int width_px = imageIn->header.width_px;
+    int height_px = imageIn->norm_height;
+
+    // Perform computation on the input image
+    for (int i = 0; i < height_px; i++)
     {
-        for (int i = 0; i < FILTER_SIZE; i++)
+        for (int j = 0; j < width_px; j++)
         {
-            for (int j = 0; j < FILTER_SIZE; j++)
-            {
-                filter[i][j] = 1;
-            }
-        }
-    }
-
-    int blurredValue = image->pixels[x][y].green * filter[1][1];
-
-    blurredValue += check(image, x - 1, y - 1, "g") * filter[0][0];
-    blurredValue += check(image, x - 1, y, "g") * filter[0][1];
-    blurredValue += check(image, x - 1, y + 1, "g") * filter[0][2];
-
-    blurredValue += check(image, x, y - 1, "g") * filter[1][0];
-    blurredValue += check(image, x, y + 1, "g") * filter[1][2];
-
-    blurredValue += check(image, x + 1, y - 1, "g") * filter[2][0];
-    blurredValue += check(image, x + 1, y, "g") * filter[2][1];
-    blurredValue += check(image, x + 1, y + 1, "g") * filter[2][2];
-
-    return blurredValue / 9;
-}
-
-int getBlueBlurred(BMP_Image *image, int x, int y, int filter[FILTER_SIZE][FILTER_SIZE])
-{
-    if (filter == NULL)
-    {
-        for (int i = 0; i < FILTER_SIZE; i++)
-        {
-            for (int j = 0; j < FILTER_SIZE; j++)
-            {
-                filter[i][j] = 1;
-            }
-        }
-    }
-
-    int blurredValue = image->pixels[x][y].blue * filter[1][1];
-
-    blurredValue += check(image, x - 1, y - 1, "b") * filter[0][0];
-    blurredValue += check(image, x - 1, y, "b") * filter[0][1];
-    blurredValue += check(image, x - 1, y + 1, "b") * filter[0][2];
-
-    blurredValue += check(image, x, y - 1, "b") * filter[1][0];
-    blurredValue += check(image, x, y + 1, "b") * filter[1][2];
-
-    blurredValue += check(image, x + 1, y - 1, "b") * filter[2][0];
-    blurredValue += check(image, x + 1, y, "b") * filter[2][1];
-    blurredValue += check(image, x + 1, y + 1, "b") * filter[2][2];
-
-    return blurredValue / 9;
-}
-
-int getAplhaBlurred(BMP_Image *image, int x, int y, int filter[FILTER_SIZE][FILTER_SIZE])
-{
-    if (filter == NULL)
-    {
-        for (int i = 0; i < FILTER_SIZE; i++)
-        {
-            for (int j = 0; j < FILTER_SIZE; j++)
-            {
-                filter[i][j] = 1;
-            }
-        }
-    }
-
-    int blurredValue = image->pixels[x][y].alpha * filter[1][1];
-
-    blurredValue += check(image, x - 1, y - 1, "a") * filter[0][0];
-    blurredValue += check(image, x - 1, y, "a") * filter[0][1];
-    blurredValue += check(image, x - 1, y + 1, "a") * filter[0][2];
-
-    blurredValue += check(image, x, y - 1, "a") * filter[1][0];
-    blurredValue += check(image, x, y + 1, "a") * filter[1][2];
-
-    blurredValue += check(image, x + 1, y - 1, "a") * filter[2][0];
-    blurredValue += check(image, x + 1, y, "a") * filter[2][1];
-    blurredValue += check(image, x + 1, y + 1, "a") * filter[2][2];
-
-    return blurredValue / 9;
-}
-
-void apply(BMP_Image *imageIn, BMP_Image *imageOut, int boxFilter[FILTER_SIZE][FILTER_SIZE])
-{
-    // Prepare computed data for the new image
-    imageOut->header = imageIn->header;
-    imageOut->bytes_per_pixel = imageIn->bytes_per_pixel;
-    imageOut->norm_height = imageIn->norm_height;
-
-    // Write new colors for pixels
-    for (int i = 0; i < imageIn->norm_height; i++)
-    {
-        for (int j = 0; j < imageIn->header.width_px; j++)
-        {
-            int newRed = getRedBlurred(imageIn, i, j, boxFilter);
-            int newGreen = getGreenBlurred(imageIn, i, j, boxFilter);
-            int newBlue = getBlueBlurred(imageIn, i, j, boxFilter);
-            int newAlpha = getAlphaBlurred(imageIn, i, j, boxFilter);
-
-            imageOut->pixels[i][j].red = newRed;
-            imageOut->pixels[i][j].green = newGreen;
-            imageOut->pixels[i][j].blue = newBlue;
-            imageOut->pixels[i][j].alpha = newAlpha;
+            imageOut->pixels[i][j].red = getPixelValue(imageIn->pixels, 'r', i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i][j].green = getPixelValue(imageIn->pixels, 'g', i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i][j].blue = getPixelValue(imageIn->pixels, 'b', i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i][j].alpha = 255;
         }
     }
 }
 
 void *filterThreadWorker(void *args)
 {
-    ThreadArgs *threadData = (ThreadArgs *)args;
+    parameters *data = (parameters *)args;
+    BMP_Image *imageIn = data->imageIn;
+    BMP_Image *imageOut = data->imageOut;
+    int index = data->index;
+    int numThreads = data->numThreads;
 
-    int startRow = (threadData->threadIndex * threadData->imageIn->norm_height) / threadData->numThreads;
-    int endRow = ((threadData->threadIndex + 1) * threadData->imageIn->norm_height) / threadData->numThreads;
+    int width_px = imageIn->header.width_px;
+    int height_px = imageIn->norm_height;
+
+    int rowsPerThread = height_px / numThreads;
+    int startRow = rowsPerThread * index + ((index == 0) ? 1 : 0);
+    int endRow = (index == numThreads - 1) ? height_px + 1 : rowsPerThread * (index + 1);
 
     for (int i = startRow; i < endRow; i++)
     {
-        for (int j = 0; j < threadData->imageIn->header.width_px; j++)
+        for (int j = 0; j < width_px; j++)
         {
-            int newRed = getRedBlurred(threadData->imageIn, i, j, threadData->boxFilter);
-            int newGreen = getGreenBlurred(threadData->imageIn, i, j, threadData->boxFilter);
-            int newBlue = getBlueBlurred(threadData->imageIn, i, j, threadData->boxFilter);
-            int newAlpha = getAlphaBlurred(threadData->imageIn, i, j, threadData->boxFilter);
-
-            threadData->imageOut->pixels[i][j].red = newRed;
-            threadData->imageOut->pixels[i][j].green = newGreen;
-            threadData->imageOut->pixels[i][j].blue = newBlue;
-            threadData->imageOut->pixels[i][j].alpha = newAlpha;
+            imageOut->pixels[i - 1][j].red = getPixelValue(imageIn->pixels, 'r', i, j + 1) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j].blue = getPixelValue(imageIn->pixels, 'b', i, j + 1) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j].green = getPixelValue(imageIn->pixels, 'g', i, j + 1) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j].alpha = 255;
         }
     }
 
     return NULL;
 }
 
-void applyParallel(BMP_Image *imageIn, BMP_Image *imageOut, int boxFilter[FILTER_SIZE][FILTER_SIZE], int numThreads)
+void applyParallel(BMP_Image *imageIn, BMP_Image *imageOut, int numThreads)
 {
-    imageOut->header = imageIn->header;
-    imageOut->bytes_per_pixel = imageIn->bytes_per_pixel;
-    imageOut->norm_height = imageIn->norm_height;
+    pthread_t *threads = malloc(numThreads * sizeof(pthread_t));
+    parameters *threadData = malloc(numThreads * sizeof(parameters));
 
-    pthread_t threads[numThreads];
-    ThreadArgs threadData[numThreads];
-
+    // Create threads and assign work
     for (int i = 0; i < numThreads; i++)
     {
         threadData[i].imageIn = imageIn;
         threadData[i].imageOut = imageOut;
-        threadData[i].threadIndex = i;
         threadData[i].numThreads = numThreads;
-
-        for (int x = 0; x < FILTER_SIZE; x++)
-        {
-            for (int y = 0; y < FILTER_SIZE; y++)
-            {
-                threadData[i].boxFilter[x][y] = boxFilter[x][y];
-            }
-        }
-
         pthread_create(&threads[i], NULL, filterThreadWorker, &threadData[i]);
     }
 
+    // Wait for threads to complete
     for (int i = 0; i < numThreads; i++)
     {
         pthread_join(threads[i], NULL);
     }
+
+    // Clean up resources
+    free(threads);
+    free(threadData);
 }
