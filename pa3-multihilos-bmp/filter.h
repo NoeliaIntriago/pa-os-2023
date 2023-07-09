@@ -1,7 +1,9 @@
 #include "bmp.h"
 
-void apply(BMP_Image * imageIn, BMP_Image * imageOut);
+#define FILTER_SIZE 3
 
-void applyParallel(BMP_Image * imageIn, BMP_Image * imageOut, int boxFilter[3][3], int numThreads);
+void apply(BMP_Image * imageIn, BMP_Image * imageOut, int boxFilter[FILTER_SIZE][FILTER_SIZE]);
+
+void applyParallel(BMP_Image * imageIn, BMP_Image * imageOut, int boxFilter[FILTER_SIZE][FILTER_SIZE], int numThreads);
 
 void *filterThreadWorker(void * args);
