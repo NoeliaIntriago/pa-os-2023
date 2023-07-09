@@ -8,92 +8,115 @@ typedef struct
 {
     BMP_Image *imageIn;
     BMP_Image *imageOut;
-    int index;
-    int numThreads;
+    int startRow;
+    int endRow;
 } parameters;
 
 int boxFilter[FILTER_SIZE][FILTER_SIZE] = {{1, 1, 1},
                                            {1, 1, 1},
                                            {1, 1, 1}};
 
-int getPixelValue(Pixel **pixels_in, int color, int x, int y)
+/* RETRIEVE ACTUAL PIXEL CHANNEL VALUE */
+int getPixelValue(Pixel **pixels, int color, int x, int y)
 {
     int value = 0;
 
-    for (int i = 0; i < FILTER_SIZE; i++)
+    switch (color)
     {
-        for (int j = 0; j < FILTER_SIZE; j++)
+    case 'r':
+    {
+        for (int k = 0; k < FILTER_SIZE; k++)
         {
-            int m = x - FILTER_SIZE / 2 + i;
-            int n = y - FILTER_SIZE / 2 + j;
-
-            int channel;
-
-            switch (color)
+            for (int l = 0; l < FILTER_SIZE; l++)
             {
-            case 'r':
-                channel = pixels_in[m][n].red;
-                break;
-            case 'g':
-                channel = pixels_in[m][n].green;
-                break;
-            case 'b':
-                channel = pixels_in[m][n].blue;
-                break;
-            default:
-                return 0;
+                int m = x - FILTER_SIZE / 2 + k;
+                int n = y - FILTER_SIZE / 2 + l;
+                value += pixels[m][n].red * boxFilter[k][l];
             }
-
-            value += channel * boxFilter[i][j];
         }
+        break;
+    }
+    case 'b':
+    {
+        for (int k = 0; k < FILTER_SIZE; k++)
+        {
+            for (int l = 0; l < FILTER_SIZE; l++)
+            {
+                int m = x - FILTER_SIZE / 2 + k;
+                int n = y - FILTER_SIZE / 2 + l;
+                value += pixels[m][n].blue * boxFilter[k][l];
+            }
+        }
+        break;
+    }
+    case 'g':
+    {
+        for (int k = 0; k < FILTER_SIZE; k++)
+        {
+            for (int l = 0; l < FILTER_SIZE; l++)
+            {
+                int m = x - FILTER_SIZE / 2 + k;
+                int n = y - FILTER_SIZE / 2 + l;
+                value += pixels[m][n].green * boxFilter[k][l];
+            }
+        }
+        break;
+    }
     }
 
     return value;
 }
 
-void apply(BMP_Image *imageIn, BMP_Image *imageOut)
+/* HANDLE PADDING FOR IMAGE */
+void handlePadding(BMP_Image *imageIn)
 {
-    int width_px = imageIn->header.width_px;
-    int height_px = imageIn->norm_height;
+    int width_px = imageIn->header.width_px + 2;
+    int height_px = imageIn->norm_height + 2;
 
-    // Perform computation on the input image
+    Pixel **padding = calloc(height_px, sizeof(Pixel *));
     for (int i = 0; i < height_px; i++)
     {
-        for (int j = 0; j < width_px; j++)
+        padding[i] = calloc(width_px, sizeof(Pixel));
+    }
+
+    for (int j = 0; j < imageIn->norm_height; j++)
+    {
+        for (int k = 0; k < imageIn->header.width_px; k++)
         {
-            imageOut->pixels[i][j].red = getPixelValue(imageIn->pixels, 'r', i, j) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i][j].green = getPixelValue(imageIn->pixels, 'g', i, j) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i][j].blue = getPixelValue(imageIn->pixels, 'b', i, j) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i][j].alpha = 255;
+            padding[j + 1][k + 1].red = imageIn->pixels[j][k].red;
+            padding[j + 1][k + 1].blue = imageIn->pixels[j][k].blue;
+            padding[j + 1][k + 1].green = imageIn->pixels[j][k].green;
+            padding[j + 1][k + 1].alpha = imageIn->pixels[j][k].alpha;
+        }
+    }
+
+    imageIn->pixels = padding;
+}
+
+void apply(BMP_Image *imageIn, BMP_Image *imageOut, int startRow, int endRow)
+{
+    for (int i = startRow; i < endRow; i++)
+    {
+        for (int j = 1; j < imageIn->header.width_px + 1; j++)
+        {
+            imageOut->pixels[i - 1][j - 1].red = getPixelValue(imageIn->pixels, 'r', i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j - 1].green = getPixelValue(imageIn->pixels, 'g', i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j - 1].blue = getPixelValue(imageIn->pixels, 'b', i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j - 1].alpha = 255;
         }
     }
 }
 
 void *filterThreadWorker(void *args)
 {
-    parameters *data = (parameters *)args;
-    BMP_Image *imageIn = data->imageIn;
-    BMP_Image *imageOut = data->imageOut;
-    int index = data->index;
-    int numThreads = data->numThreads;
+    parameters *params = (parameters *)args;
 
-    int width_px = imageIn->header.width_px;
-    int height_px = imageIn->norm_height;
+    BMP_Image *imageIn = params->imageIn;
+    BMP_Image *imageOut = params->imageOut;
+    int startRow = params->startRow;
+    int endRow = params->endRow;
 
-    int rowsPerThread = height_px / numThreads;
-    int startRow = rowsPerThread * index + ((index == 0) ? 1 : 0);
-    int endRow = (index == numThreads - 1) ? height_px + 1 : rowsPerThread * (index + 1);
-
-    for (int i = startRow; i < endRow; i++)
-    {
-        for (int j = 0; j < width_px; j++)
-        {
-            imageOut->pixels[i - 1][j].red = getPixelValue(imageIn->pixels, 'r', i, j + 1) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i - 1][j].blue = getPixelValue(imageIn->pixels, 'b', i, j + 1) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i - 1][j].green = getPixelValue(imageIn->pixels, 'g', i, j + 1) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i - 1][j].alpha = 255;
-        }
-    }
+    apply(imageIn, imageOut, startRow, endRow);
 
     return NULL;
 }
@@ -101,24 +124,51 @@ void *filterThreadWorker(void *args)
 void applyParallel(BMP_Image *imageIn, BMP_Image *imageOut, int numThreads)
 {
     pthread_t *threads = malloc(numThreads * sizeof(pthread_t));
-    parameters *threadData = malloc(numThreads * sizeof(parameters));
+    parameters *params = malloc(numThreads * sizeof(parameters));
 
-    // Create threads and assign work
+    Pixel **temp = imageIn->pixels;
+    handlePadding(imageIn); // Zero Padding
+
+    int height_px = imageIn->norm_height;
+    int rowsPerThread = height_px / numThreads;
+    int remainingRows = height_px % numThreads;
+    int startRow = 1;
+    int endRow;
+
     for (int i = 0; i < numThreads; i++)
     {
-        threadData[i].imageIn = imageIn;
-        threadData[i].imageOut = imageOut;
-        threadData[i].numThreads = numThreads;
-        pthread_create(&threads[i], NULL, filterThreadWorker, &threadData[i]);
+        endRow = startRow + rowsPerThread - 1;
+        if (remainingRows > 0)
+        {
+            endRow++;
+            remainingRows--;
+        }
+
+        params[i].imageIn = imageIn;
+        params[i].imageOut = imageOut;
+        params[i].startRow = startRow;
+        params[i].endRow = endRow;
+
+        pthread_create(&threads[i], NULL, filterThreadWorker, &params[i]);
+
+        startRow = endRow + 1;
     }
 
-    // Wait for threads to complete
     for (int i = 0; i < numThreads; i++)
     {
         pthread_join(threads[i], NULL);
     }
 
-    // Clean up resources
+    // Free the image with padding
+    for (int i = 0; i < imageIn->norm_height + 2; i++)
+    {
+        free(imageIn->pixels[i]);
+    }
+    free(imageIn->pixels);
+
+    // Reassign the previous image
+    imageIn->pixels = temp;
+
     free(threads);
-    free(threadData);
+    free(params);
 }

@@ -75,10 +75,9 @@ int readImageData(FILE *srcFile, BMP_Image *image, int dataSize)
   for (int i = 0; i < image->norm_height; i++)
   {
     for (int j = 0; j < image->header.width_px; j++)
-    { // Add this line
+    {
       if (fread(&image->pixels[i][j], dataSize, 1, srcFile) != 1)
-      { // Modify this line
-        fprintf(stderr, "Pixel (%d,%d) could not be read from the file\n", i, j);
+      {
         return 1;
       }
     }
@@ -89,14 +88,14 @@ int readImageData(FILE *srcFile, BMP_Image *image, int dataSize)
 
 int readImage(FILE *srcFile, BMP_Image *dataImage)
 {
-  BMP_Image *tmp = createBMPImage(srcFile);
-  if (tmp == NULL)
+  BMP_Image *image = createBMPImage(srcFile);
+  if (image == NULL)
   {
     return 1;
   }
 
-  *dataImage = *tmp;
-  free(tmp);
+  *dataImage = *image;
+  free(image);
 
   return readImageData(srcFile, dataImage, dataImage->bytes_per_pixel);
 }
