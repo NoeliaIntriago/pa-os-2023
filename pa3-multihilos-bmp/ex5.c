@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
   } 
 
   image = readImage(source);
+  printBMPHeader(&image->header);
   if(!checkBMPValid(&image->header)) {
     printError(VALID_ERROR);
     return EXIT_FAILURE;

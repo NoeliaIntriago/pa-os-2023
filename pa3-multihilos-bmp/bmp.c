@@ -32,33 +32,28 @@ void printError(int error) {
 */
 BMP_Image* createBMPImage(FILE* fptr) {
 
-  if (fptr == NULL) {
-    printError(FILE_ERROR);
-    return NULL;
-  }
-
   //Allocate memory for BMP_Image*;
-  BMP_Image * new_image = malloc(sizeof(BMP_Image));
+  BMP_Image* new_image = malloc(sizeof(BMP_Image));
   if (new_image == NULL) {
     printError(MEMORY_ERROR);
     return NULL;
   }
 
   //Read the first 54 bytes of the source into the header
-  fread(&(new_image->header), sizeof(HEADER_SIZE), 1, fptr);
+  if (fread(&(new_image->header), HEADER_SIZE, 1, fptr) != 1) {
+    printError(VALID_ERROR);
+    return NULL;
+  }
 
   //Compute data size, width, height, and bytes per pixel
   new_image->norm_height = abs(new_image->header.height_px);
   new_image->bytes_per_pixel = new_image->header.bits_per_pixel / 8;
   new_image->pixels = malloc((new_image->norm_height) * sizeof(Pixel *));
 
+  //Allocate memory for image data
   for (int i = 0; i < new_image->norm_height; i++) {
     new_image->pixels[i] = malloc((new_image->header.width_px) * sizeof(Pixel));
   }
-
-  //Allocate memory for image data
-  printf("Reading ImageData...\n");
-  readImageData(fptr, new_image, new_image->header.size);
 
   return new_image;
 }
@@ -67,8 +62,12 @@ BMP_Image* createBMPImage(FILE* fptr) {
  * The functions reads data from the source into the image data matriz of pixels.
 */
 void readImageData(FILE* srcFile, BMP_Image * image, int dataSize) {
-  for(int i = 0; i < image->norm_height; i++) {
-    fread(image->pixels[i], sizeof(Pixel), image->header.width_px, srcFile);
+  for (int i = 0; i < image->norm_height; i++) {
+    for (int j = 0; j < image->header.width_px; j++) {
+      if (fread(&image->pixels[i][j], dataSize, 1, srcFile) == 0) {
+        exit(FILE_ERROR);
+      }
+    }
   }
 }
 
@@ -76,7 +75,18 @@ void readImageData(FILE* srcFile, BMP_Image * image, int dataSize) {
  * The functions open the source file and call to CreateBMPImage to load de data image.
 */
 BMP_Image* readImage(FILE *srcFile) {
-  return createBMPImage(srcFile);
+  if (srcFile == NULL) {
+    printError(FILE_ERROR);
+    return NULL;
+  }
+
+  BMP_Image* image = createBMPImage(srcFile);
+  if (image == NULL) {
+    printError(MEMORY_ERROR);
+    return NULL;
+  }
+  
+  return image;
 }
 
 /* The input arguments are the destination file name, and BMP_Image pointer.
@@ -89,7 +99,7 @@ void writeImage(char* destFileName, BMP_Image* dataImage) {
     return;
   }
 
-  fwrite(&(dataImage->header), sizeof(BMP_Header), 1, fd);
+  fwrite(&(dataImage->header), HEADER_SIZE, 1, fd);
 
   for (int y = 0; y < dataImage->norm_height; y++) {
     fwrite(dataImage->pixels[y], sizeof(Pixel), dataImage->header.width_px, fd);
