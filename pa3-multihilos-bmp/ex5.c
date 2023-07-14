@@ -41,11 +41,8 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  if (readImage(source, imageIn) != 0)
-  {
-    printError(MEMORY_ERROR);
-    exit(EXIT_FAILURE);
-  }
+  readImage(source, imageIn);
+  
 
   if (!checkBMPValid(&imageIn->header))
   {
@@ -53,14 +50,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (modifyImage(imageIn, imageOut) != 0)
-  {
-    freeImage(imageIn);
-    freeImage(imageOut);
-
-    fclose(source);
-    fclose(dest);
-  }
+  modifyImage(imageIn, imageOut);
 
   if (!checkBMPValid(&imageOut->header))
   {
@@ -69,11 +59,7 @@ int main(int argc, char **argv)
   }
 
   applyParallel(imageIn, imageOut, NUMTHREADS);
-  if (writeImage(dest, imageOut) != 0)
-  {
-    printError(MEMORY_ERROR);
-    exit(EXIT_FAILURE);
-  }
+  writeImage(dest, imageOut);
 
   freeImage(imageIn);
   freeImage(imageOut);

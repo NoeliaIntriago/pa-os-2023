@@ -70,7 +70,7 @@ BMP_Image *createBMPImage(FILE *fptr)
   return image;
 }
 
-int readImageData(FILE *srcFile, BMP_Image *image, int dataSize)
+void readImageData(FILE *srcFile, BMP_Image *image, int dataSize)
 {
   for (int i = 0; i < image->norm_height; i++)
   {
@@ -78,47 +78,47 @@ int readImageData(FILE *srcFile, BMP_Image *image, int dataSize)
     {
       if (fread(&image->pixels[i][j], dataSize, 1, srcFile) != 1)
       {
-        return 1;
+        printError(MEMORY_ERROR);
+        exit(EXIT_FAILURE);
       }
     }
   }
-
-  return 0;
 }
 
-int readImage(FILE *srcFile, BMP_Image *dataImage)
+void readImage(FILE *srcFile, BMP_Image *dataImage)
 {
   BMP_Image *image = createBMPImage(srcFile);
   if (image == NULL)
   {
-    return 1;
+    printError(MEMORY_ERROR);
+    exit(EXIT_FAILURE);
   }
 
   *dataImage = *image;
   free(image);
 
-  return readImageData(srcFile, dataImage, dataImage->bytes_per_pixel);
+  readImageData(srcFile, dataImage, dataImage->bytes_per_pixel);
 }
 
-int writeImage(FILE *destFile, BMP_Image *dataImage)
+void writeImage(FILE *destFile, BMP_Image *dataImage)
 {
   if (fwrite(&(dataImage->header), sizeof(BMP_Header), 1, destFile) != 1)
   {
-    return 1;
+    printError(MEMORY_ERROR);
+    exit(EXIT_FAILURE);
   }
 
   for (int i = 0; i < dataImage->norm_height; i++)
   {
     if (fwrite(dataImage->pixels[i], sizeof(Pixel), dataImage->header.width_px, destFile) != dataImage->header.width_px)
     {
-      fprintf(stderr, "Row (%d) could not be written to the output image\n", i);
+      printError(MEMORY_ERROR);
+      exit(EXIT_FAILURE);
     }
   }
-
-  return 0;
 }
 
-int modifyImage(BMP_Image *image, BMP_Image *new_image)
+void modifyImage(BMP_Image *image, BMP_Image *new_image)
 {
   memcpy(&(new_image->header), &(image->header), sizeof(BMP_Header));
 
@@ -147,7 +147,8 @@ int modifyImage(BMP_Image *image, BMP_Image *new_image)
   new_image->pixels = (Pixel **)malloc(new_image->norm_height * sizeof(Pixel *));
   if (new_image->pixels == NULL)
   {
-    return 1;
+    printError(MEMORY_ERROR);
+    exit(EXIT_FAILURE);
   }
 
   for (int i = 0; i < image->norm_height; i++)
@@ -160,11 +161,10 @@ int modifyImage(BMP_Image *image, BMP_Image *new_image)
         free(new_image->pixels[j]);
       }
       free(new_image->pixels);
-      return 1;
+      printError(MEMORY_ERROR);
+      exit(EXIT_FAILURE);
     }
   }
-
-  return 0;
 }
 
 void freeImage(BMP_Image *image)

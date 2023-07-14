@@ -67,10 +67,10 @@ typedef struct BMP_Image
 
 void printError(int error);
 BMP_Image *createBMPImage(FILE *fptr);
-int readImageData(FILE *srcFile, BMP_Image *dataImage, int dataSize);
-int readImage(FILE *srcFile, BMP_Image *image);
-int writeImage(FILE *destFile, BMP_Image *dataImage);
-int modifyImage(BMP_Image *image, BMP_Image *new_image);
+void readImageData(FILE *srcFile, BMP_Image *dataImage, int dataSize);
+void readImage(FILE *srcFile, BMP_Image *image);
+void writeImage(FILE *destFile, BMP_Image *dataImage);
+void modifyImage(BMP_Image *image, BMP_Image *new_image);
 void freeImage(BMP_Image *image);
 int checkBMPValid(BMP_Header *header);
 void printBMPHeader(BMP_Header *header);
