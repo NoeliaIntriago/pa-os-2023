@@ -16,54 +16,48 @@ int boxFilter[FILTER_SIZE][FILTER_SIZE] = {{1, 1, 1},
                                            {1, 1, 1},
                                            {1, 1, 1}};
 
-/* RETRIEVE ACTUAL PIXEL CHANNEL VALUE */
-int getPixelValue(Pixel **pixels, int color, int x, int y)
-{
+/* RETRIEVE ACTUAL PIXEL RED CHANNEL VALUE */
+int getRedPxlValue(Pixel **pixels, int x, int y) {
     int value = 0;
+    for (int k = 0; k < FILTER_SIZE; k++)
+    {
+        for (int l = 0; l < FILTER_SIZE; l++)
+        {
+            int m = x - FILTER_SIZE / 2 + k;
+            int n = y - FILTER_SIZE / 2 + l;
+            value += pixels[m][n].red * boxFilter[k][l];
+        }
+    }
+    return value;
+}
 
-    switch (color)
+/* RETRIEVE ACTUAL PIXEL GREEN CHANNEL VALUE */
+int getGreenPxlValue(Pixel **pixels, int x, int y) {
+    int value = 0;
+    for (int k = 0; k < FILTER_SIZE; k++)
     {
-    case 'r':
-    {
-        for (int k = 0; k < FILTER_SIZE; k++)
+        for (int l = 0; l < FILTER_SIZE; l++)
         {
-            for (int l = 0; l < FILTER_SIZE; l++)
-            {
-                int m = x - FILTER_SIZE / 2 + k;
-                int n = y - FILTER_SIZE / 2 + l;
-                value += pixels[m][n].red * boxFilter[k][l];
-            }
+            int m = x - FILTER_SIZE / 2 + k;
+            int n = y - FILTER_SIZE / 2 + l;
+            value += pixels[m][n].green * boxFilter[k][l];
         }
-        break;
     }
-    case 'b':
-    {
-        for (int k = 0; k < FILTER_SIZE; k++)
-        {
-            for (int l = 0; l < FILTER_SIZE; l++)
-            {
-                int m = x - FILTER_SIZE / 2 + k;
-                int n = y - FILTER_SIZE / 2 + l;
-                value += pixels[m][n].blue * boxFilter[k][l];
-            }
-        }
-        break;
-    }
-    case 'g':
-    {
-        for (int k = 0; k < FILTER_SIZE; k++)
-        {
-            for (int l = 0; l < FILTER_SIZE; l++)
-            {
-                int m = x - FILTER_SIZE / 2 + k;
-                int n = y - FILTER_SIZE / 2 + l;
-                value += pixels[m][n].green * boxFilter[k][l];
-            }
-        }
-        break;
-    }
-    }
+    return value;
+}
 
+/* RETRIEVE ACTUAL PIXEL BLUE CHANNEL VALUE */
+int getBluePxlValue(Pixel **pixels, int x, int y) {
+    int value = 0;
+    for (int k = 0; k < FILTER_SIZE; k++)
+    {
+        for (int l = 0; l < FILTER_SIZE; l++)
+        {
+            int m = x - FILTER_SIZE / 2 + k;
+            int n = y - FILTER_SIZE / 2 + l;
+            value += pixels[m][n].blue * boxFilter[k][l];
+        }
+    }
     return value;
 }
 
@@ -106,9 +100,9 @@ void apply(BMP_Image *imageIn, BMP_Image *imageOut, int startRow, int endRow)
     {
         for (int j = 1; j < imageIn->header.width_px + 1; j++)
         {
-            imageOut->pixels[i - 1][j - 1].red = getPixelValue(imageIn->pixels, 'r', i, j) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i - 1][j - 1].green = getPixelValue(imageIn->pixels, 'g', i, j) / (FILTER_SIZE * FILTER_SIZE);
-            imageOut->pixels[i - 1][j - 1].blue = getPixelValue(imageIn->pixels, 'b', i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j - 1].red = getRedPxlValue(imageIn->pixels, i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j - 1].green = getGreenPxlValue(imageIn->pixels, i, j) / (FILTER_SIZE * FILTER_SIZE);
+            imageOut->pixels[i - 1][j - 1].blue = getBluePxlValue(imageIn->pixels, i, j) / (FILTER_SIZE * FILTER_SIZE);
             imageOut->pixels[i - 1][j - 1].alpha = 255;
         }
     }
