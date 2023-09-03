@@ -1,12 +1,16 @@
-GCC = gcc
-CFLAGS = -Wall -Wshadow
-OBJS = ex5.o bmp.o filter.o
+GCC=gcc
+CFLAGS=-g -Wall -Wshadow
 
-ex5: $(OBJS)
-	$(GCC) $(CFLAGS) $(OBJS) -o $@
+all: ex5_pipeline blur_filter edge_detection_filter
 
-.c.o: 
-	$(GCC) $(CFLAGS) -c $*.c 
+ex5_pipeline: ./publicador.c ./bmp.c ./bmp.h
+	$(GCC) $(CFLAGS) ./publicador.c ./bmp.c -I./ -o $@
+
+blur_filter: ./blur.c ./bmp.c ./bmp.h
+	$(GCC) $(CFLAGS) ./blur.c ./bmp.c -I./ -o $@ -lpthread
+
+edge_detection_filter: ./edge.c ./bmp.c ./bmp.h
+	$(GCC) $(CFLAGS) ./edge.c ./bmp.c -o $@ -lpthread
 
 clean:
-	rm *.o ex5
+	rm ex5_pipeline blur_filter edge_detection_filter
