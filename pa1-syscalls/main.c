@@ -8,7 +8,7 @@ int main (int argc, char* argv[]) {
     int output;
 
     if (argc > 2) {
-        printf("Use: mycat namefile.\n");
+        printf("Use: mycat [namefile].\n");
         return 0;
     }
 
