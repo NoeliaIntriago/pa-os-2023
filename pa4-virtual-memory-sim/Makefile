@@ -1,11 +1,15 @@
 GCC = gcc
 CFLAGS = -Wall -g
-OBJS = main.o
+OBJS = memory_management.o
 
-pagingdemand: $(OBJS)
-	$(GCC) $(CFLAGS) -o main $(OBJS)
+memory_management: $(OBJS)
+	$(GCC) $(CFLAGS) -o memory_management $(OBJS)
 
-main.o: memory_management.c
+memory_management.o: memory_management.c
+
+test: memory_management
+	./memory_management data/addresses.txt correct_out.txt
+	diff correct_out.txt test/correct.txt
 
 clean:
-	rm -f *.o pagingdemand
+	rm -f *.o memory_management
