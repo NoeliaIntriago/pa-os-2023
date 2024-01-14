@@ -9,7 +9,11 @@ memory_management.o: memory_management.c
 
 test: memory_management
 	./memory_management data/addresses.txt correct_out.txt
-	diff correct_out.txt test/correct.txt
+	@if diff correct_out.txt test/correct.txt > /dev/null; then \
+		echo "EXITO -> ARCHIVOS IDÉNTICOS"; \
+	else \
+		echo "ERROR -> ARCHIVOS DISTINTOS"; \
+	fi
 
 clean:
 	rm -f *.o memory_management
