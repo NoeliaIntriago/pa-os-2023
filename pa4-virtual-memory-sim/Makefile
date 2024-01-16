@@ -1,15 +1,15 @@
 GCC = gcc
 CFLAGS = -Wall -g
-OBJS = memory_management.o
+OBJS = pagingdemand.o
 
-memory_management: $(OBJS)
-	$(GCC) $(CFLAGS) -o memory_management $(OBJS)
+pagingdemand: $(OBJS)
+	$(GCC) $(CFLAGS) -o pagingdemand $(OBJS)
 
-memory_management.o: memory_management.c
+pagingdemand.o: pagingdemand.c
 
-test: memory_management
-	./memory_management data/addresses.txt output.txt
-	@diff_lines=$$(diff output.txt test/correct.txt | grep -c '^[<>]') ; \
+test: pagingdemand
+	./pagingdemand addresses.txt data.txt
+	@diff_lines=$$(diff data.txt correct.txt | grep -c '^[<>]') ; \
 	if [ $$diff_lines -eq 0 ]; then \
 		echo "EXITO -> ARCHIVOS IDÉNTICOS"; \
 		exit 0; \
@@ -19,4 +19,4 @@ test: memory_management
 	fi
 
 clean:
-	rm -f *.o memory_management
+	rm -f *.o pagingdemand data.txt

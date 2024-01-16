@@ -47,7 +47,7 @@ void read_backing_store(signed char *physical_memory, unsigned int *page_table)
         page_table[i] = -1;
     }
 
-    backing_store = fopen("data/BACKING_STORE.bin", "rb");
+    backing_store = fopen("BACKING_STORE.bin", "rb");
     if (backing_store == NULL)
     {
         printf("Error opening backing store\n");
