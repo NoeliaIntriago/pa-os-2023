@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        printf("Usage: ./memory_management <input file> <output file>\n");
+        printf("Usage: ./pagingdemand <input file> <output file>\n");
         return 1;
     }
 
